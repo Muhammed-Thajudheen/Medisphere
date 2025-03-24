@@ -1,25 +1,27 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../auth/login_screen.dart'; // Import your login screen
-import '../patient/patient_profile_screen.dart'; // Import the profile screen
-import '../patient/view_appointments_screen.dart'; // Import appointment screen
-import '../patient/view_prescriptions_screen.dart'; // Import prescription screen
-import '../patient/view_pdf_screen.dart'; // Import medical files screen
-import '../patient/patientpdf.dart'; // Import upload PDF screen
+import 'patient_profile_screen.dart'; // Import the profile screen
+import 'view_appointments_screen.dart'; // Import appointment screen
+import 'view_prescriptions_screen.dart'; // Import prescription screen
+import 'view_pdf_screen.dart'; // Import medical files screen
+import 'patientpdf.dart'; // Import upload PDF screen
+import 'book_appointment_screen.dart'; // Import the new Book Appointment screen
 
 class PatientDashboard extends StatefulWidget {
   const PatientDashboard({super.key});
 
   @override
-  PatientDashboardState createState() => PatientDashboardState();
+  State<PatientDashboard> createState() => _PatientDashboardState();
 }
 
-class PatientDashboardState extends State<PatientDashboard> {
+class _PatientDashboardState extends State<PatientDashboard> {
   int _selectedIndex = 0;
 
   final List<Widget> _pages = [
-    ViewAppointmentsScreen(), // Appointments
+    ViewAppointmentsScreen(), // Existing Appointments
     ViewPrescriptionsScreen(), // Prescriptions
+    BookAppointmentScreen(), // New: Book Appointments
     ViewPDFScreen(), // Medical Files
     PatientUploadPDFScreen(), // Upload PDF
   ];
@@ -38,8 +40,7 @@ class PatientDashboardState extends State<PatientDashboard> {
 
       Navigator.pushReplacement(
         context,
-        MaterialPageRoute(
-            builder: (context) => LoginScreen()), // Navigate to login screen
+        MaterialPageRoute(builder: (context) => LoginScreen()),
       );
     } catch (e) {
       if (!mounted) return; // Check if the widget is still mounted
@@ -54,10 +55,10 @@ class PatientDashboardState extends State<PatientDashboard> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Patient Dashboard'),
+        title: const Text('Patient Dashboard'),
         actions: [
           IconButton(
-            icon: Icon(Icons.logout),
+            icon: const Icon(Icons.logout),
             onPressed: _logout, // Add logout functionality
           ),
         ],
@@ -66,7 +67,7 @@ class PatientDashboardState extends State<PatientDashboard> {
         child: ListView(
           padding: EdgeInsets.zero,
           children: [
-            DrawerHeader(
+            const DrawerHeader(
               decoration: BoxDecoration(color: Colors.blue),
               child: Text(
                 'Patient Profile',
@@ -74,12 +75,11 @@ class PatientDashboardState extends State<PatientDashboard> {
               ),
             ),
             ListTile(
-              title: Text('Profile'),
+              title: const Text('Profile'),
               onTap: () {
                 Navigator.push(
                   context,
-                  MaterialPageRoute(
-                      builder: (context) => PatientProfileScreen()),
+                  MaterialPageRoute(builder: (context) => PatientProfileScreen()),
                 );
               },
             ),
@@ -93,13 +93,25 @@ class PatientDashboardState extends State<PatientDashboard> {
         type: BottomNavigationBarType.fixed, // Required for more than 3 items
         items: const <BottomNavigationBarItem>[
           BottomNavigationBarItem(
-              icon: Icon(Icons.calendar_today), label: 'Appointments'),
+            icon: Icon(Icons.calendar_today),
+            label: 'Appointments',
+          ),
           BottomNavigationBarItem(
-              icon: Icon(Icons.assignment), label: 'Prescriptions'),
+            icon: Icon(Icons.assignment),
+            label: 'Prescriptions',
+          ),
           BottomNavigationBarItem(
-              icon: Icon(Icons.file_present), label: 'Medical Files'),
+            icon: Icon(Icons.add), // Icon for booking appointments
+            label: 'Book Appointment',
+          ),
           BottomNavigationBarItem(
-              icon: Icon(Icons.upload_file), label: 'Upload PDF'), // New tab
+            icon: Icon(Icons.file_present),
+            label: 'Medical Files',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.upload_file),
+            label: 'Upload PDF', // New tab
+          ),
         ],
       ),
     );

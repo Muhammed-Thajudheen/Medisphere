@@ -4,8 +4,11 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 class ViewPrescriptionsScreen extends StatelessWidget {
   const ViewPrescriptionsScreen({super.key});
 
-  Future<List<Map<String, dynamic>>> fetchPrescriptions(String patientId) async {
+  Future<List<Map<String, dynamic>>> _fetchPrescriptions() async {
     try {
+      final patientId = Supabase.instance.client.auth.currentUser!.id;
+
+      // Fetch prescriptions for the logged-in patient
       final response = await Supabase.instance.client
           .from('prescriptions')
           .select('*, users!prescriptions_doctor_id_fkey(email)')
@@ -19,43 +22,35 @@ class ViewPrescriptionsScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final patientId = Supabase.instance.client.auth.currentUser!.id;
-
     return Scaffold(
-      appBar: AppBar(title: Text('Prescriptions')),
+      appBar: AppBar(title: const Text('My Prescriptions')),
       body: FutureBuilder<List<Map<String, dynamic>>>(
-        future: fetchPrescriptions(patientId),
+        future: _fetchPrescriptions(),
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
-            return Center(child: CircularProgressIndicator());
+            return const Center(child: CircularProgressIndicator());
           } else if (snapshot.hasError) {
             return Center(child: Text('Error: ${snapshot.error}'));
           } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
-            return Center(child: Text('No prescriptions found.'));
+            return const Center(child: Text('No prescriptions found.'));
           } else {
-            final prescriptions = snapshot.data!;
             return ListView.builder(
-              itemCount: prescriptions.length,
+              itemCount: snapshot.data!.length,
               itemBuilder: (context, index) {
-                final prescription = prescriptions[index];
+                final prescription = snapshot.data![index];
                 final doctorEmail = prescription['users']['email'] ?? 'Unknown Doctor';
                 final details = prescription['details'];
                 final createdAt = prescription['created_at'];
-                final formattedDate =
-                    createdAt != null ? DateTime.parse(createdAt).toString() : 'Unknown Date';
 
                 return Card(
-                  margin: EdgeInsets.all(8.0),
-                  child: Padding(
-                    padding: const EdgeInsets.all(16.0),
-                    child: Column(
+                  margin: const EdgeInsets.all(8.0),
+                  child: ListTile(
+                    title: Text('Doctor: $doctorEmail'),
+                    subtitle: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text('Doctor: $doctorEmail', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-                        SizedBox(height: 8),
                         Text('Details: $details'),
-                        SizedBox(height: 8),
-                        Text('Date: $formattedDate'),
+                        Text('Sent on: $createdAt'),
                       ],
                     ),
                   ),

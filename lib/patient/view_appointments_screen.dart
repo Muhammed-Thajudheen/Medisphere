@@ -4,11 +4,14 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 class ViewAppointmentsScreen extends StatelessWidget {
   const ViewAppointmentsScreen({super.key});
 
-  Future<List<Map<String, dynamic>>> fetchAppointments(String patientId) async {
+  Future<List<Map<String, dynamic>>> _fetchAppointments() async {
     try {
+      final patientId = Supabase.instance.client.auth.currentUser!.id;
+
+      // Fetch appointments for the logged-in patient
       final response = await Supabase.instance.client
           .from('appointments')
-          .select('*, users!appointments_doctor_id_fkey(email)')
+          .select('*, time_slots(*)')
           .eq('patient_id', patientId);
 
       return response;
@@ -19,41 +22,31 @@ class ViewAppointmentsScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final patientId = Supabase.instance.client.auth.currentUser!.id;
-
     return Scaffold(
-      appBar: AppBar(title: Text('Appointments')),
+      appBar: AppBar(title: const Text('My Appointments')),
       body: FutureBuilder<List<Map<String, dynamic>>>(
-        future: fetchAppointments(patientId),
+        future: _fetchAppointments(),
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
-            return Center(child: CircularProgressIndicator());
+            return const Center(child: CircularProgressIndicator());
           } else if (snapshot.hasError) {
             return Center(child: Text('Error: ${snapshot.error}'));
           } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
-            return Center(child: Text('No appointments found.'));
+            return const Center(child: Text('No appointments found.'));
           } else {
-            final appointments = snapshot.data!;
             return ListView.builder(
-              itemCount: appointments.length,
+              itemCount: snapshot.data!.length,
               itemBuilder: (context, index) {
-                final appointment = appointments[index];
-                final doctorEmail = appointment['users']['email'] ?? 'Unknown Doctor';
-                final dateTime = appointment['date_time'];
-                final formattedDateTime = dateTime != null ? DateTime.parse(dateTime).toString() : 'Unknown Date';
+                final appointment = snapshot.data![index];
+                final slot = appointment['time_slots'];
+                final date = slot['date'];
+                final startTime = slot['start_time'];
+                final endTime = slot['end_time'];
 
                 return Card(
-                  margin: EdgeInsets.all(8.0),
-                  child: Padding(
-                    padding: const EdgeInsets.all(16.0),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text('Doctor: $doctorEmail', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-                        SizedBox(height: 8),
-                        Text('Date & Time: $formattedDateTime'),
-                      ],
-                    ),
+                  margin: const EdgeInsets.all(8.0),
+                  child: ListTile(
+                    title: Text('$date - $startTime to $endTime'),
                   ),
                 );
               },

@@ -30,15 +30,15 @@ class UploadPDFScreenState extends State<UploadPDFScreen> {
     }
   }
 
-  Future<void> _uploadFile(BuildContext context) async {
+ Future<void> _uploadFile(BuildContext context) async {
   String? successMessage;
   String? errorMessage;
 
   try {
-    // Get the current patient's ID
+    // Get the current user's ID
     String? userId = Supabase.instance.client.auth.currentUser?.id;
     if (userId == null) {
-      throw Exception('You must be logged in as a patient.');
+      throw Exception('You must be logged in.');
     }
 
     // Pick a file using FilePicker
@@ -91,6 +91,17 @@ class UploadPDFScreenState extends State<UploadPDFScreen> {
 
     // Log the file URL for debugging
     LoggerService.debug('Uploaded file URL: $fileUrl');
+
+    // Insert the file metadata into the 'files' table
+    await Supabase.instance.client.from('files').insert({
+      'doctor_id': selectedPatientId ?? userId, // Use selectedPatientId if available, otherwise use current user's ID
+      'patient_id': userId, // Patient ID is always the current user's ID
+      'file_url': fileUrl, // URL of the uploaded file
+      'file_name': customFileName, // Custom file name
+      'uploaded_at': DateTime.now().toIso8601String(), // Current timestamp
+      'user_id': userId, // User ID (current user)
+      'uploaded_by': userId, // Uploaded by the current user
+    });
 
     // Set the success message
     successMessage = 'File uploaded successfully!';
